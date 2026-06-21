@@ -291,8 +291,8 @@ def find_light(right_cam_id:int, left_cam_id:int):
                 leftImgCords.append(centroidsL[largestBlobIdxL])
                 rightImgCords.append(centroidsR[largestBlobIdxR])
 
-def find_light_frame(right_cam_id:int, left_cam_id:int):
-    
+
+
 
 def triangulate(leftPoints, rightPoints, leftIntrinsics, rightIntrinsics, R, T):
     # setup projection matrcies in
