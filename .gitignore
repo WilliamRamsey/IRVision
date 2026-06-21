@@ -1,5 +1,7 @@
-leftCamCal
-leftStereo
-rightCamCal
-rightStereo
-tracks
+leftCamCal/
+leftStereo/
+rightCamCal/
+rightStereo/
+tracks/
+.vscode/
+__pycache__/
