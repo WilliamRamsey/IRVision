@@ -39,6 +39,44 @@ def take_pics(n: int, save_dir: str, cam_id: int = 1) -> None:
     cap.release()
     cv2.destroyAllWindows()
 
+def take_pics_timer(n: int, timer: int, save_dir: str, cam_id: int):
+    cap = cv2.VideoCapture(cam_id, cv2.CAP_MSMF)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap.set(cv2.CAP_PROP_FPS, 120) 
+    time.sleep(1)
+
+    print("cap started")
+    if not cap.isOpened():
+        print("capture failed to open")
+        quit()
+
+    savedImgIdx = 0
+    start = time.time_ns()
+
+    print("Starting Capture")
+    while savedImgIdx < n:
+        ret, frame = cap.read()
+
+        if not ret:
+            print("capture failed to initialize")
+            quit()
+
+
+        grayscale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        cv2.imshow("Webcam", grayscale)
+
+   
+        if (time.time_ns()- start) // 1e9 >= timer:
+            print(f"CHEESE! {savedImgIdx}")
+            cv2.imwrite(f"{save_dir}/img{savedImgIdx}.jpg", grayscale)
+            savedImgIdx += 1
+            start = time.time_ns()
+
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
 def take_stereo_pics(n: int, left_cam_id: int, right_cam_id: int,
                      left_save_dir: str, right_save_dir: str):
     capR = cv2.VideoCapture(right_cam_id, cv2.CAP_MSMF)
@@ -81,6 +119,52 @@ def take_stereo_pics(n: int, left_cam_id: int, right_cam_id: int,
     capL.release()
     cv2.destroyAllWindows()
 
+def take_stereo_pics_timer(n: int, timer: int, left_cam_id: int, right_cam_id: int,
+                          left_save_dir: str, right_save_dir: str):
+    capR = cv2.VideoCapture(right_cam_id, cv2.CAP_MSMF)
+    capR.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    capR.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    capR.set(cv2.CAP_PROP_FPS, 120) 
+    time.sleep(1)
+
+    capL = cv2.VideoCapture(left_cam_id, cv2.CAP_MSMF)
+    capL.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    capL.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    capL.set(cv2.CAP_PROP_FPS, 120)
+
+    if not capL.isOpened() or not capR.isOpened():
+        print("capture failed to open")
+        quit()
+
+    savedImgIdx = 0
+    start = time.time_ns()
+
+    print("Starting Capture")
+    while savedImgIdx < n:
+        retR, frameR = capR.read()
+        retL, frameL = capL.read()
+
+        if not retR or not retL:
+            print("capture failed to initialize")
+            quit()
+
+        cv2.imshow("Right Camera", frameR)
+        cv2.imshow("Left Camera", frameL)
+
+        if (time.time_ns() - start) // 1e9 >= timer:
+            print(f"CHEESE! {savedImgIdx}")
+            cv2.imwrite(f"{left_save_dir}/img{savedImgIdx}.jpg", frameL)
+            cv2.imwrite(f"{right_save_dir}/img{savedImgIdx}.jpg", frameR)
+            savedImgIdx += 1
+            start = time.time_ns()
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    capR.release()
+    capL.release()
+    cv2.destroyAllWindows()
+
 def calibrate_cam(check_pattern_size: tuple[int, int], img_dir: str, img_num: int):
     """
     
@@ -113,21 +197,20 @@ def calibrate_cam(check_pattern_size: tuple[int, int], img_dir: str, img_num: in
 
         """
         # DISPLAY CORNERS
-        for corner in corners:
-            cv2.circle(img, [int(px) for px in corner[0]], 5, (0, 0, 0), -1)
-            print(corner[0])
-        
-
-            cv2.imshow(f"{i}", img)
-            while True:
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+        cv2.drawChessboardCorners(img, check_pattern_size, corners, ret)
+        print(i)     
+        cv2.imshow("See cmd line for num", img)
+        while True:
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
         cv2.destroyAllWindows()
         """
+        
 
         if ret:
             image_points.append(corners.astype(np.float32))
             object_points.append(object_point_grid[:len(corners)].astype(np.float32))
+
 
     ret, camera_matrix, dist, rvecs, tvecs = cv2.calibrateCamera(
         object_points,
@@ -180,6 +263,7 @@ def calibrate_stereo(check_pattern_size:tuple[int, int], square_size:float,
     stereocal_flags = cv2.CALIB_FIX_INTRINSIC
 
     for i in range(img_num):
+        print(i)
         imgR = cv2.imread(f"{right_img_dir}/img{i}.jpg")
         imgL = cv2.imread(f"{left_img_dir}/img{i}.jpg")
 
@@ -192,7 +276,7 @@ def calibrate_stereo(check_pattern_size:tuple[int, int], square_size:float,
             cornersR = cv2.cornerSubPix(imgRGray, cornersR, conv_size, (-1, -1), criteria)
             cornersL = cv2.cornerSubPix(imgLGray, cornersL, conv_size, (-1, -1), criteria)
 
-            """
+            
             cv2.drawChessboardCorners(imgR, check_pattern_size, cornersR, retR)
             cv2.drawChessboardCorners(imgL, check_pattern_size, cornersL, retL)
             
@@ -200,13 +284,12 @@ def calibrate_stereo(check_pattern_size:tuple[int, int], square_size:float,
             k = cv2.waitKey(2000)
             cv2.imshow("left", imgL)
             k = cv2.waitKey(2000)
-            """
+            
 
 
             object_points.append(object_point_grid)
             imgPointsR.append(cornersR)
             imgPointsL.append(cornersL)
-
 
 
         else:
@@ -216,7 +299,7 @@ def calibrate_stereo(check_pattern_size:tuple[int, int], square_size:float,
             object_points, imgPointsL, imgPointsR,
             left_internals["mtx"], left_internals["dst"], right_internals["mtx"], right_internals["dst"],
             (imgRGray.shape[1], imgRGray.shape[0]), criteria=criteria, flags=stereocal_flags)
-
+    print(f"Stereo Error: {stereoRet}")
     return R, T
 
 def find_light(right_cam_id:int, left_cam_id:int):
@@ -290,9 +373,6 @@ def find_light(right_cam_id:int, left_cam_id:int):
             if lightEmUp:
                 leftImgCords.append(centroidsL[largestBlobIdxL])
                 rightImgCords.append(centroidsR[largestBlobIdxR])
-
-
-
 
 def triangulate(leftPoints, rightPoints, leftIntrinsics, rightIntrinsics, R, T):
     # setup projection matrcies in

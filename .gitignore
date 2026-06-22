@@ -5,3 +5,4 @@ rightStereo/
 tracks/
 .vscode/
 __pycache__/
+yolo11n-pose.pt

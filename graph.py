@@ -35,7 +35,7 @@ def set_axes_equal(ax):
 	ax.set_ylim3d(y_middle - max_range / 2, y_middle + max_range / 2)
 	ax.set_zlim3d(z_middle - max_range / 2, z_middle + max_range / 2)
 
-
+	
 data = pd.read_csv("tracks/track.csv", header=None)
 
 ax.scatter(data.iloc[:, 0], data.iloc[:, 1], data.iloc[:, 2])
