@@ -4,25 +4,9 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from calibrate import *
-
-RIGHT_CAMERA = 2
-LEFT_CAMERA = 1
-PATTERN_SIZE = (6, 7)
-
-
-# MONO CALIBRATION FOR EACH CAMERA
-# take_pics(20, "rightCamCal", RIGHT_CAMERA)
-rightCamCalErr, rightCamMtx, rightCamDst = calibrate_cam(PATTERN_SIZE, "rightCamCal", 20)
-print(f"rightCamCal Error: {rightCamCalErr}")
-# take_pics(20, "leftCamCal", LEFT_CAMERA)
-leftCamCalErr, leftCamMtx, leftCamDst = calibrate_cam(PATTERN_SIZE, "leftCamCal", 19)
-print(f"leftCameraCal Error: {leftCamCalErr}")
-camIntsR = {"mtx": rightCamMtx, "dst": rightCamDst}
-camIntsL = {"mtx": leftCamMtx, "dst": leftCamDst}
-
-# STEREO CALIBRATION FOR BOTH CAMERAS
-# take_stereo_pics(10, LEFT_CAMERA, RIGHT_CAMERA, "leftStereo", "rightStereo")
-R, T = calibrate_stereo(PATTERN_SIZE, 1, "leftStereo", "rightStereo", camIntsL, camIntsR, 6)
+# offloads calibration work to calibrate_procedure.py
+# we can still access the required variables. thank god.
+from calibrate_procedure import *
 
 # MODEL INIT
 model = YOLO("yolo11n-pose.pt")  
@@ -31,14 +15,12 @@ model = YOLO("yolo11n-pose.pt")
 capR = cv2.VideoCapture(RIGHT_CAMERA, cv2.CAP_MSMF)
 capR.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 capR.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-capR.set(cv2.CAP_PROP_FPS, 120) 
+capR.set(cv2.CAP_PROP_FPS, 120)
 time.sleep(1)
 capL = cv2.VideoCapture(LEFT_CAMERA, cv2.CAP_MSMF)
 capL.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 capL.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 capL.set(cv2.CAP_PROP_FPS, 120)
-
-
 
 
 if not capL.isOpened() or not capR.isOpened():

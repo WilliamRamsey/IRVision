@@ -165,6 +165,41 @@ def take_stereo_pics_timer(n: int, timer: int, left_cam_id: int, right_cam_id: i
     capL.release()
     cv2.destroyAllWindows()
 
+def display_stereo_views(left_cam_id: int, right_cam_id: int):
+    capR = cv2.VideoCapture(right_cam_id, cv2.CAP_MSMF)
+    capR.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    capR.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    capR.set(cv2.CAP_PROP_FPS, 120) 
+    time.sleep(1)
+    capL = cv2.VideoCapture(left_cam_id, cv2.CAP_MSMF)
+    capL.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    capL.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    capL.set(cv2.CAP_PROP_FPS, 120)
+
+
+    if not capL.isOpened() or not capR.isOpened():
+        print("capture failed to open")
+        quit()
+
+    while True:
+        retR, frameR = capR.read()
+        retL, frameL = capL.read()
+
+
+        if not retR or not retL:
+            print("capture failed to initialize")
+            quit()
+
+        cv2.imshow("Right Camera", frameR)
+        cv2.imshow("Left Camera", frameL)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    capR.release()
+    capL.release()
+    cv2.destroyAllWindows()
+
 def calibrate_cam(check_pattern_size: tuple[int, int], img_dir: str, img_num: int):
     """
     
@@ -211,11 +246,10 @@ def calibrate_cam(check_pattern_size: tuple[int, int], img_dir: str, img_num: in
             image_points.append(corners.astype(np.float32))
             object_points.append(object_point_grid[:len(corners)].astype(np.float32))
 
-
     ret, camera_matrix, dist, rvecs, tvecs = cv2.calibrateCamera(
         object_points,
         image_points,
-        img.shape[::-1],
+        img.shape[::-1][1:],
         camera_matrix,
         dist_coeffs,
     )
@@ -241,7 +275,7 @@ def calibrate_cam(check_pattern_size: tuple[int, int], img_dir: str, img_num: in
 def calibrate_stereo(check_pattern_size:tuple[int, int], square_size:float,
                      left_img_dir: str, right_img_dir: str,
                      left_internals:dict, right_internals:dict,
-                     img_num:int):
+                     img_num:int, show_checks: bool = False):
     """
     check
     """
@@ -276,14 +310,14 @@ def calibrate_stereo(check_pattern_size:tuple[int, int], square_size:float,
             cornersR = cv2.cornerSubPix(imgRGray, cornersR, conv_size, (-1, -1), criteria)
             cornersL = cv2.cornerSubPix(imgLGray, cornersL, conv_size, (-1, -1), criteria)
 
-            
-            cv2.drawChessboardCorners(imgR, check_pattern_size, cornersR, retR)
-            cv2.drawChessboardCorners(imgL, check_pattern_size, cornersL, retL)
-            
-            cv2.imshow("right", imgR)
-            k = cv2.waitKey(2000)
-            cv2.imshow("left", imgL)
-            k = cv2.waitKey(2000)
+            if show_checks:
+                cv2.drawChessboardCorners(imgR, check_pattern_size, cornersR, retR)
+                cv2.drawChessboardCorners(imgL, check_pattern_size, cornersL, retL)
+                
+                cv2.imshow("right", imgR)
+                k = cv2.waitKey(2000)
+                cv2.imshow("left", imgL)
+                k = cv2.waitKey(2000)
             
 
 
