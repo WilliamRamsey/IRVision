@@ -1,18 +1,24 @@
 from calibrate import *
+from Camera import *
 
-RIGHT_CAMERA = 1
+RIGHT_CAMERA = 0
 LEFT_CAMERA = 2
 PATTERN_SIZE = (3, 4)
 
-# take_pics_timer(30, 10, "leftCamCal", LEFT_CAMERA)
-leftCamCalErr, leftCamMtx, leftCamDst = calibrate_cam(PATTERN_SIZE, "leftCamCal", 29)
-# print(f"Left calibration error: {leftCamCalErr}")
-camIntsL = {"mtx": leftCamMtx, "dst": leftCamDst}
-# take_pics_timer(30, 6, "rightCamCal", RIGHT_CAMERA)
-rightCamCalErr, rightCamMtx, rightCamDst = calibrate_cam(PATTERN_SIZE, "rightCamCal", 24)
-# print(f"Right calibration error: {rightCamCalErr}")
-camIntsR = {"mtx": rightCamMtx, "dst": rightCamDst}
+camL = Camera(LEFT_CAMERA)
+camR = Camera(RIGHT_CAMERA)
+
+### CAMERA CALIBRATION
+# camL.take_pics_timer(30, 10, "leftCamCal")
+leftCamCalErr, leftCamMtx, leftCamDst = camL.calibrate(PATTERN_SIZE, "leftCamCal", 29)
+print(f"Left calibration error: {leftCamCalErr}")
+
+# camR.take_pics_timer(30, 6, "rightCamCal")
+rightCamCalErr, rightCamMtx, rightCamDst = camR.calibrate(PATTERN_SIZE, "rightCamCal", 24)
+print(f"Right calibration error: {rightCamCalErr}")
 
 
-# take_stereo_pics_timer(10, 10, LEFT_CAMERA, RIGHT_CAMERA, "leftStereo", "rightStereo")
-R, T = calibrate_stereo(PATTERN_SIZE, 1, "leftStereo", "rightStereo", camIntsL, camIntsR, 6)
+### STEREO CALIBRATION
+stereoCams = Stereo(camL, camR)
+# stereoCams.take_pics_timer(15, 10, "leftStereo", "rightStereo")
+R, T = stereoCams.calibrate(PATTERN_SIZE, 1, "leftStereo", "rightStereo", 6)

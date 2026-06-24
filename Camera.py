@@ -3,6 +3,22 @@ import time
 import numpy as np
 from pathlib import Path
 
+class Capture:
+    """
+    # Capture class used for storing recordings
+    Exculsively created by the stereo object
+    """
+    def __init__(self):
+        # Create capture directory
+        # Read largest capture ID
+        # Create new folder for this capture
+        pass
+    
+    def computePose(self):
+        # Saves 3D 
+        pass
+    
+
 class Camera:
     def __init__(self, ID: int):
         """
@@ -98,6 +114,12 @@ class Camera:
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
     
+    def read(self):
+        ret, frame = self.cap.read()
+        if not ret:
+            raise Exception(f"Failed to read camera {self.ID}")
+        return frame
+
     def calibrate(self, check_pattern_size:tuple[int, int], img_dir:str, img_num:int, verify_corners:bool=False):
         """
         parameters:
@@ -152,11 +174,11 @@ class Camera:
                 image_points.append(corners.astype(np.float32))
                 object_points.append(object_point_grid[:len(corners)].astype(np.float32))
 
-        if img:
+        if img is not None:
             ret, camera_matrix, dist, rvecs, tvecs = cv2.calibrateCamera(
                 object_points,
                 image_points,
-                img.shape[::-1][1:],
+                (img.shape[1], img.shape[0]),
                 camera_matrix,
                 dist_coeffs,
             )
@@ -199,9 +221,33 @@ class Stereo:
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-    
-    def calibrate(self, check_pattern_size:tuple[int, int], square_size:float, left_img_dir:str, right_img_dir:str, img_num:int, verify_corners:bool=False):
+ 
+    def take_pics_timer(self, n:int, timer:int, left_save_dir:str, right_save_dir:str):
+        savedImgIdx = 0
+        start = time.time_ns()
 
+        while savedImgIdx < n:
+            retR, frameR = self.rightCam.get_cap().read()
+            retL, frameL = self.leftCam.get_cap().read()
+
+            if not retR or not retL:
+                print("capture failed to initialize")
+                quit()
+
+            cv2.imshow("Right Camera", frameR)
+            cv2.imshow("Left Camera", frameL)
+
+            if (time.time_ns() - start) // 1e9 >= timer:
+                print(f"CHEESE! {savedImgIdx}")
+                cv2.imwrite(f"{left_save_dir}/img{savedImgIdx}.jpg", frameL)
+                cv2.imwrite(f"{right_save_dir}/img{savedImgIdx}.jpg", frameR)
+                savedImgIdx += 1
+                start = time.time_ns()
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    def calibrate(self, check_pattern_size:tuple[int, int], square_size:float, left_img_dir:str, right_img_dir:str, img_num:int, verify_corners:bool=False):
         # FIND CHECKERBOARD CORNERS
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
         conv_size = (11, 11)
@@ -273,6 +319,9 @@ class Stereo:
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
     
+    def read(self):
+        return self.leftCam.read(), self.rightCam.read()
+
     def triangulate(self, leftPoints, rightPoints):
         if not self.calibrated:
             raise Exception("Stereo system is not calibrated.")

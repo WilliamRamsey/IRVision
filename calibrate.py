@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import time
-from scipy import linalg
+
 
 
 def take_pics(n: int, save_dir: str, cam_id: int = 1) -> None:
@@ -425,3 +425,4 @@ def triangulate(leftPoints, rightPoints, leftIntrinsics, rightIntrinsics, R, T):
     X_real = X_homogenous[:3] / X_homogenous[3]
     print(X_real)
     return X_real
+
