@@ -7,6 +7,10 @@ class Capture:
     """
     # Capture class used for storing recordings
     Exculsively created by the stereo object
+
+    Holds a list of keypoint frames of form:
+            timestep:1   timestep: 2
+    list: [np.array([keypointIDX][3]), np.array([])]
     """
     def __init__(self):
         # Create capture directory
@@ -323,6 +327,7 @@ class Stereo:
         return self.leftCam.read(), self.rightCam.read()
 
     def triangulate(self, leftPoints, rightPoints):
+        
         if not self.calibrated:
             raise Exception("Stereo system is not calibrated.")
         
@@ -336,7 +341,8 @@ class Stereo:
         leftPoints = leftPoints.reshape(-1, 1, 2)
         rightPoints = np.array(rightPoints, dtype=np.float32)
         rightPoints = rightPoints.reshape(-1, 1, 2)
-        leftUnwarped = cv2.undistortPoints(leftPoints, self.leftCam.get_mtx(), self.leftCam.get_dist()) #type: ignore
+
+        leftUnwarped = cv2.undistortPoints(leftPoints, self.leftCam.get_mtx(), self.leftCam.get_dist())
         rightUnwarped = cv2.undistortPoints(rightPoints, self.rightCam.get_mtx(), self.rightCam.get_dist()) #type: ignore
         X_homogenous = cv2.triangulatePoints(PL, PR, leftUnwarped, rightUnwarped)
         X_real = X_homogenous[:3] / X_homogenous[3]

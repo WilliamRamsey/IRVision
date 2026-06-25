@@ -44,10 +44,14 @@ while True:
         pointsL = resultsL[0].keypoints[0].xy.cpu().numpy()
         confidenceR = resultsR[0].keypoints[0].conf.cpu().numpy()
         confidenceL = resultsL[0].keypoints[0].conf.cpu().numpy()
+
+
         confidenceMask = (confidenceL > 0.4) & (confidenceR > 0.4)
         confidenceMask = np.stack((confidenceMask, confidenceMask), 2)
         filteredPointsL = pointsL[confidenceMask]
         filteredPointsR = pointsR[confidenceMask]
+
+
 
     # visualize camera views
     annotated_frameL = resultsL[0].plot()
@@ -57,7 +61,8 @@ while True:
 
     # triangulate and visualize
     if any(confidenceMask.reshape(-1)):
-        pts3D = stereoCams.triangulate(filteredPointsL, filteredPointsR).T / 20
+        # CHANGE TO FILTERED POINTS AT SOME POINT
+        pts3D = stereoCams.triangulate(pointsL, pointsR).T / 20
         pts3D[:, 1] = - pts3D[:, 1]
         print(pts3D)
 
